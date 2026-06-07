@@ -1,40 +1,41 @@
 import streamlit as st
+from openai import OpenAI
 
-st.set_page_config(
-    page_title="Diecast Content Factory",
-    page_icon="🚗",
-    layout="wide"
-)
+st.title("🚗 Diecast Content Factory AI")
 
-st.title("🚗 Diecast Content Factory")
+api_key = st.secrets["OPENAI_API_KEY"]
 
-st.write("Generate artikel, script YouTube, dan SEO diecast secara otomatis.")
+client = OpenAI(api_key=api_key)
 
-brand = st.text_input("Brand Diecast")
+brand = st.text_input("Brand")
 
-model = st.text_input("Model Diecast")
+model = st.text_input("Model")
 
-uploaded_file = st.file_uploader(
-    "Upload Foto Diecast",
-    type=["jpg", "jpeg", "png"]
-)
+if st.button("Generate AI Content"):
 
-if st.button("Generate Content"):
+    prompt = f"""
+    Anda adalah kolektor diecast profesional.
 
-    st.success("Data berhasil diterima")
+    Buat:
 
-    st.write("### Informasi Diecast")
-    st.write(f"Brand: {brand}")
-    st.write(f"Model: {model}")
+    1. Judul YouTube
+    2. Deskripsi YouTube
+    3. 10 hashtag
 
-    if uploaded_file:
-        st.image(uploaded_file, width=400)
+    Untuk:
 
-    st.write("### Judul YouTube")
-    st.write(f"Review {brand} {model} yang Wajib Dimiliki Kolektor!")
+    Brand: {brand}
+    Model: {model}
+    """
 
-    st.write("### Deskripsi")
-    st.write(
-        f"Pada video ini kita membahas {brand} {model}, "
-        "mulai dari detail casting, sejarah rilisan, hingga nilai koleksinya."
+    response = client.chat.completions.create(
+        model="gpt-4.1-mini",
+        messages=[
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ]
     )
+
+    st.write(response.choices[0].message.content)
