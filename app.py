@@ -12,7 +12,7 @@ LUMA_KEY = st.secrets["LUMA_API_KEY"]  # Daftarkan key Luma Anda di secrets
 
 # Konfigurasi Gemini
 genai.configure(api_key=GEMINI_KEY)
-model_gemini = genai.GenerativeModel("gemini-1.5-flash")
+model_gemini = genai.GenerativeModel("gemini-3-flash-preview")
 
 st.write("Unggah foto diecast, dapatkan Teks SEO YouTube + Video Sinematik Otomatis!")
 
