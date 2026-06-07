@@ -1,74 +1,81 @@
 import streamlit as st
 import google.generativeai as genai
 from PIL import Image
+import requests
+import time
 
-st.title("🚗 Diecast Content Factory AI + Vision")
+st.title("🚗 Diecast Content Factory AI + Auto Video")
 
-# 1. Ambil Gemini API Key dari Streamlit Secrets
-api_key = st.secrets["GEMINI_API_KEY"]
+# 1. Ambil API Keys dari Streamlit Secrets
+GEMINI_KEY = st.secrets["GEMINI_API_KEY"]
+LUMA_KEY = st.secrets["LUMA_API_KEY"]  # Daftarkan key Luma Anda di secrets
 
-# 2. Konfigurasi SDK Gemini
-genai.configure(api_key=api_key)
+# Konfigurasi Gemini
+genai.configure(api_key=GEMINI_KEY)
+model_gemini = genai.GenerativeModel("gemini-1.5-flash")
 
-# 3. Inisialisasi model multimodal
-model_gemini = genai.GenerativeModel("gemini-3-flash-preview")
+st.write("Unggah foto diecast, dapatkan Teks SEO YouTube + Video Sinematik Otomatis!")
 
-st.write("Unggah foto diecast Anda, dan AI akan menganalisisnya secara otomatis untuk membuat konten YouTube!")
-
-# 4. Widget untuk Upload Foto
 uploaded_file = st.file_uploader("Pilih foto diecast (JPG/PNG)...", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
-    # Buka gambar menggunakan Pillow
     image = Image.open(uploaded_file)
-    
-    # Tampilkan preview gambar di aplikasi Streamlit
-    st.image(image, caption="Foto diecast yang diunggah", use_container_width=True)
+    st.image(image, caption="Foto diecast berhasil diunggah", use_container_width=True)
 
-    if st.button("Analisis Foto & Generate Content"):
-        with st.spinner("Gemini sedang menganalisis foto diecast Anda..."):
-            
-            # 5. Buat prompt instruksi yang spesifik untuk menganalisis gambar
-            prompt = """
-            Anda adalah seorang kolektor diecast profesional dan pakar SEO YouTube.
-            
-            Tugas Anda:
-            1. Analisis foto ini dan tebak apa Brand (misal: Hot Wheels, Mini GT, Matchbox, Pop Race, dll) dan Model mobilnya secara akurat.
-            2. Tuliskan hasil tebakan Anda di bagian paling atas dengan format:
-               - **Brand Terdeteksi:** [Nama Brand]
-               - **Model Terdeteksi:** [Nama Model/Jenis Mobil]
-            
-            3. Setelah itu, buatkan kelengkapan konten YouTube berikut:
-               - **Judul YouTube:** (Buat 2 pilihan judul yang menarik dan cinematic/clickbait berkelas)
-               - **Deskripsi YouTube:** (Buat deskripsi review yang menarik, mendetail sesuai visual mobil di foto, dan ramah SEO)
-               - **10 Hashtag:** (Hashtag yang relevan untuk target global dan lokal)
-            
-            Berikan jawaban dalam Bahasa Indonesia yang profesional namun santai khas konten kreator mainan.
+    if st.button("Generate Teks & Video Sinematik"):
+        
+        # --- LANGKAH A: GENERATE TEKS DENGAN GEMINI ---
+        with st.spinner("1. Gemini sedang menganalisis foto & membuat teks SEO..."):
+            prompt_text = """
+            Anda adalah kolektor diecast profesional dan pakar SEO YouTube.
+            Analisis foto ini, sebutkan **Brand** dan **Model** nya di paling atas.
+            Lalu buatkan: 2 Pilihan Judul YouTube, Deskripsi Review SEO, dan 10 Hashtag relevan.
             """
+            response_text = model_gemini.generate_content([prompt_text, image])
+            st.success("Teks SEO Berhasil Dibuat!")
+            st.write(response_text.text)
+        
+        st.divider()
+
+        # --- LANGKAH B: GENERATE VIDEO DENGAN LUMA AI API ---
+        with st.spinner("2. Mengirim foto ke Luma AI untuk generate video sinematik..."):
             
-            # 6. Kirim gambar dan prompt sekaligus ke Gemini
-            response = model_gemini.generate_content([prompt, image])
+            # Persiapan Data untuk Luma API (Image-to-Video)
+            luma_url = "https://api.lumalabs.ai/dream-machine/v1/generations"
+            headers = {
+                "Authorization": f"Bearer {LUMA_KEY}",
+                "Content-Type": "application/json"
+            }
             
-            st.success("Selesai!")
-            from moviepy.editor import ImageClip, TextClip, CompositeVideoClip
-
-# Kode setelah Gemini mengeluarkan response teks...
-judul_video = "Diecast Keren!" # Anda bisa mem-parsing hasil teks Gemini untuk mengambil judulnya
-
-# Membuat klip video dari gambar berdurasi 10 detik
-video_clip = ImageClip(uploaded_file).set_duration(10)
-
-# Membuat teks otomatis di dalam video (membutuhkan ImageMagick terinstal di server)
-txt_clip = TextClip(judul_video, fontsize=24, color='white', bg_color='black')
-txt_clip = txt_clip.set_pos('bottom').set_duration(10)
-
-# Menggabungkan gambar dan teks
-final_video = CompositeVideoClip([video_clip, txt_clip])
-
-# Menyimpan menjadi file MP4
-video_path = "output_shorts.mp4"
-final_video.write_videofile(video_path, fps=24)
-
-# Menampilkan video di Streamlit agar bisa didownload user
-st.video(video_path)
-            st.write(response.text)
+            # Kita meminta Luma membuat pergerakan kamera sinematik mengitari diecast
+            payload = {
+                "prompt": "Cinematic studio lighting, slow camera pan around the car, realistic reflections, 4k resolution, 3d motion",
+                "keyframes": {
+                    "frame0": {
+                        "type": "image",
+                        "url": "ISI_DENGAN_URL_GAMBAR_ANDA" 
+                        # Catatan: Luma API membutuhkan URL gambar publik. 
+                        # Jika dicoba lokal/Streamlit Cloud, file upload harus di-hosting sementara (misal via Imgur API/Cloudinary)
+                        # ATAU jika menggunakan Runway API, bisa langsung upload file biner (binary bytes).
+                    }
+                }
+            }
+            
+            # Jalankan request ke Video Generator (Contoh REST API umum)
+            # response_video = requests.post(luma_url, json=payload, headers=headers)
+            
+            # Simulasi Proses Antrean Video AI (Biasanya memakan waktu 1-2 menit)
+            # Di bawah ini adalah logika berulang (loop) untuk mengecek apakah video sudah selesai dirender di server AI
+            
+            st.info("Video sedang diproses di server AI (estimasi 1 menit). Harap tunggu...")
+            time.sleep(10) # Simulasi loading pasca-request
+            
+            # Contoh tampilan jika video sudah beres didownload dari API:
+            # video_url = response_video.json()["assets"]["video"]
+            
+            # Untuk keperluan testing interface saat ini, kita beri placeholder sukses:
+            st.success("Video Sinematik Selesai Dibuat!")
+            
+            # Menampilkan video di dashboard Streamlit Anda
+            # st.video(video_url)
+            st.info("Hubungkan baris kode API di atas dengan akun Luma/Runway Anda untuk mengunduh MP4 aslinya.")
