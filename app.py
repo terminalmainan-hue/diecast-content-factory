@@ -1,14 +1,18 @@
 import streamlit as st
-from openai import OpenAI
+import google.generativeai as genai
 
 st.title("🚗 Diecast Content Factory AI")
 
-api_key = st.secrets["OPENAI_API_KEY"]
+# 1. Ambil Gemini API Key dari Streamlit Secrets
+api_key = st.secrets["GEMINI_API_KEY"]
 
-client = OpenAI(api_key=api_key)
+# 2. Konfigurasi SDK Gemini
+genai.configure(api_key=api_key)
+
+# 3. Inisialisasi model (menggunakan gemini-1.5-flash yang cepat dan efisien)
+model_gemini = genai.GenerativeModel("gemini-1.5-flash")
 
 brand = st.text_input("Brand")
-
 model = st.text_input("Model")
 
 if st.button("Generate AI Content"):
@@ -28,14 +32,8 @@ if st.button("Generate AI Content"):
     Model: {model}
     """
 
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ]
-    )
+    # 4. Panggil API Gemini untuk membuat konten
+    response = model_gemini.generate_content(prompt)
 
-    st.write(response.choices[0].message.content)
+    # 5. Tampilkan hasil text secara langsung
+    st.write(response.text)
