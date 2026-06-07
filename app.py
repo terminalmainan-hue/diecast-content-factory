@@ -3,6 +3,7 @@ import google.generativeai as genai
 from PIL import Image
 import requests
 import time
+import base64
 
 def upload_to_imgbb(uploaded_file):
     """
