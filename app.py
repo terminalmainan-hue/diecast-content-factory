@@ -50,4 +50,25 @@ if uploaded_file is not None:
             response = model_gemini.generate_content([prompt, image])
             
             st.success("Selesai!")
+            from moviepy.editor import ImageClip, TextClip, CompositeVideoClip
+
+# Kode setelah Gemini mengeluarkan response teks...
+judul_video = "Diecast Keren!" # Anda bisa mem-parsing hasil teks Gemini untuk mengambil judulnya
+
+# Membuat klip video dari gambar berdurasi 10 detik
+video_clip = ImageClip(uploaded_file).set_duration(10)
+
+# Membuat teks otomatis di dalam video (membutuhkan ImageMagick terinstal di server)
+txt_clip = TextClip(judul_video, fontsize=24, color='white', bg_color='black')
+txt_clip = txt_clip.set_pos('bottom').set_duration(10)
+
+# Menggabungkan gambar dan teks
+final_video = CompositeVideoClip([video_clip, txt_clip])
+
+# Menyimpan menjadi file MP4
+video_path = "output_shorts.mp4"
+final_video.write_videofile(video_path, fps=24)
+
+# Menampilkan video di Streamlit agar bisa didownload user
+st.video(video_path)
             st.write(response.text)
