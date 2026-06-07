@@ -9,8 +9,8 @@ api_key = st.secrets["GEMINI_API_KEY"]
 # 2. Konfigurasi SDK Gemini
 genai.configure(api_key=api_key)
 
-# 3. Inisialisasi model (menggunakan gemini-1.5-flash yang cepat dan efisien)
-model_gemini = genai.GenerativeModel("gemini-1.5-flash")
+# 3. Inisialisasi model (menggunakan gemini-3-flash yang cepat dan efisien)
+model_gemini = genai.GenerativeModel("gemini-3-flash-preview")
 
 brand = st.text_input("Brand")
 model = st.text_input("Model")
