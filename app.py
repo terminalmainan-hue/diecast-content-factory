@@ -4,6 +4,41 @@ from PIL import Image
 import requests
 import time
 
+def upload_to_imgbb(uploaded_file):
+    """
+    Fungsi untuk mengunggah file gambar dari Streamlit ke ImgBB secara gratis
+    dan mengembalikan URL gambar publik langsung (.jpg/.png).
+    """
+    # 1. Ambil API Key dari Streamlit Secrets
+    api_key = st.secrets["IMGBB_API_KEY"]
+    url = "https://api.imgbb.com/1/upload"
+    
+    # 2. ImgBB meminta file dalam format teks Base64
+    # Kita ubah data biner file upload menjadi string base64
+    image_bytes = uploaded_file.getvalue()
+    base64_image = base64.b64encode(image_bytes).decode('utf-8')
+    
+    # 3. Siapkan payload data
+    payload = {
+        "key": api_key,
+        "image": base64_image
+    }
+    
+    try:
+        # Kirim request POST ke ImgBB
+        response = requests.post(url, data=payload)
+        response_data = response.json()
+        
+        # 4. Jika sukses, ambil URL gambar langsung (direct link)
+        if response.status_code == 200 and response_data["success"]:
+            return response_data["data"]["url"]
+        else:
+            st.error(f"ImgBB Upload Gagal: {response_data['error']['message']}")
+            return None
+            
+    except Exception as e:
+        st.error(f"Terjadi kesalahan koneksi ke ImgBB: {e}")
+        return None
 st.title("🚗 Diecast Content Factory AI + Auto Video")
 
 # 1. Ambil API Keys dari Streamlit Secrets
