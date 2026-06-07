@@ -1,7 +1,8 @@
 import streamlit as st
 import google.generativeai as genai
+from PIL import Image
 
-st.title("🚗 Diecast Content Factory AI")
+st.title("🚗 Diecast Content Factory AI + Vision")
 
 # 1. Ambil Gemini API Key dari Streamlit Secrets
 api_key = st.secrets["GEMINI_API_KEY"]
@@ -9,31 +10,44 @@ api_key = st.secrets["GEMINI_API_KEY"]
 # 2. Konfigurasi SDK Gemini
 genai.configure(api_key=api_key)
 
-# 3. Inisialisasi model (menggunakan gemini-3-flash yang cepat dan efisien)
+# 3. Inisialisasi model multimodal
 model_gemini = genai.GenerativeModel("gemini-3-flash-preview")
 
-brand = st.text_input("Brand")
-model = st.text_input("Model")
+st.write("Unggah foto diecast Anda, dan AI akan menganalisisnya secara otomatis untuk membuat konten YouTube!")
 
-if st.button("Generate AI Content"):
+# 4. Widget untuk Upload Foto
+uploaded_file = st.file_uploader("Pilih foto diecast (JPG/PNG)...", type=["jpg", "jpeg", "png"])
 
-    prompt = f"""
-    Anda adalah kolektor diecast profesional.
+if uploaded_file is not None:
+    # Buka gambar menggunakan Pillow
+    image = Image.open(uploaded_file)
+    
+    # Tampilkan preview gambar di aplikasi Streamlit
+    st.image(image, caption="Foto diecast yang diunggah", use_container_width=True)
 
-    Buat:
-
-    1. Judul YouTube
-    2. Deskripsi YouTube
-    3. 10 hashtag
-
-    Untuk:
-
-    Brand: {brand}
-    Model: {model}
-    """
-
-    # 4. Panggil API Gemini untuk membuat konten
-    response = model_gemini.generate_content(prompt)
-
-    # 5. Tampilkan hasil text secara langsung
-    st.write(response.text)
+    if st.button("Analisis Foto & Generate Content"):
+        with st.spinner("Gemini sedang menganalisis foto diecast Anda..."):
+            
+            # 5. Buat prompt instruksi yang spesifik untuk menganalisis gambar
+            prompt = """
+            Anda adalah seorang kolektor diecast profesional dan pakar SEO YouTube.
+            
+            Tugas Anda:
+            1. Analisis foto ini dan tebak apa Brand (misal: Hot Wheels, Mini GT, Matchbox, Pop Race, dll) dan Model mobilnya secara akurat.
+            2. Tuliskan hasil tebakan Anda di bagian paling atas dengan format:
+               - **Brand Terdeteksi:** [Nama Brand]
+               - **Model Terdeteksi:** [Nama Model/Jenis Mobil]
+            
+            3. Setelah itu, buatkan kelengkapan konten YouTube berikut:
+               - **Judul YouTube:** (Buat 2 pilihan judul yang menarik dan cinematic/clickbait berkelas)
+               - **Deskripsi YouTube:** (Buat deskripsi review yang menarik, mendetail sesuai visual mobil di foto, dan ramah SEO)
+               - **10 Hashtag:** (Hashtag yang relevan untuk target global dan lokal)
+            
+            Berikan jawaban dalam Bahasa Indonesia yang profesional namun santai khas konten kreator mainan.
+            """
+            
+            # 6. Kirim gambar dan prompt sekaligus ke Gemini
+            response = model_gemini.generate_content([prompt, image])
+            
+            st.success("Selesai!")
+            st.write(response.text)
